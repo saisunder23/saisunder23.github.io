@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Sunder Sai" />
+
+
+<title>Analyzing Crime in San Francisco</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-inverse  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Sunder Sai</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">
+    <span class="fa fa-home"></span>
+     
+    Home
+  </a>
+</li>
+<li>
+  <a href="about.html">
+    <span class="fa fa-user"></span>
+     
+    Resume
+  </a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-rocket"></span>
+     
+    Data Science Projects
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="covid19_2.html">COVID-19 Time-Series Analysis</a>
+    </li>
+    <li>
+      <a href="covid19_1.html">Exploring COVID-19</a>
+    </li>
+    <li>
+      <a href="crime_sf.html">Mapping Crime in San Francisco</a>
+    </li>
+    <li>
+      <a href="sat.html">Mapping SAT Scores</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="mailto:saisunder23@gmail.com">
+    <span class="fa fa-envelope"></span>
+     
+    Contact Me
+  </a>
+</li>
+<li>
+  <a href="https://github.com/saisunder23">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://www.linkedin.com/in/sunder-sai">
+    <span class="fa fa-linkedin"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://twitter.com/_SunderThunder_">
+    <span class="fa fa-twitter"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Analyzing Crime in San Francisco</h1>
+<h4 class="author">Sunder Sai</h4>
+
+</div>
+
+
+<p><img src="crime_sf_files/figure-html/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /></p>
+<div id="san-francisco-crime-patterns" class="section level2">
+<h2><strong>San Francisco Crime Patterns</strong></h2>
+<p>In this R-markdown project, I leverage publicly available data to interpret crime patterns within the city of San Francisco. I utilize my skills in R through data manipulation with dplyr package as well as data visualization with ggplot 2. This project was originally completed through <a href="https://learn.datacamp.com/projects/614">DataCamp</a> using a Jupyter notebook. All codes are annotated.</p>
+<hr />
+</div>
+<div id="step-1-loading-packages-data" class="section level2">
+<h2>Step 1: Loading Packages &amp; Data</h2>
+<ul>
+<li>In this first code chunk, I utilize the <code>tidyverse</code> and <code>lubridate</code> packages to read the CSV files from the city of San Francisco website.</li>
+</ul>
+<pre class="r"><code>setwd(&quot;C:/Users/Sunder Sai/Desktop/Coding/R-programming/GitHub/saisunder23.github.io&quot;)
+
+#Load libraries
+library(lubridate)
+library(tidyverse)
+
+# Read in incidents dataset
+incidents &lt;- read_csv(&quot;data/downsample_police-department-incidents.csv&quot;)
+
+# Read in calls dataset
+calls &lt;- read_csv(&quot;data/downsample_police-department-calls-for-service.csv&quot;)</code></pre>
+</div>
+<div id="step-2-inspecting-data-and-generate-frequency-statistic" class="section level2">
+<h2>Step 2: Inspecting data and generate frequency statistic</h2>
+<ul>
+<li>In this next code chunk, I <code>glimpse</code> the incidents and calls datasets to understand the structure of the data.<br />
+</li>
+<li>I then count the number of reported incidents by <code>Date</code> and rename the column of counts to <code>n_incidents</code>.<br />
+</li>
+<li>I then count the number of civilian phone calls for police service by Date and rename the columns of counts to <code>n_calls</code>, assigning the output to <code>daily_calls</code>.</li>
+</ul>
+<pre class="r"><code># Glimpse structure of both datasets
+glimpse(incidents)
+glimpse(calls)
+
+# Aggregate the number of reported incidents by Date
+daily_incidents &lt;- incidents %&gt;%
+    count(Date, sort = TRUE) %&gt;%
+    rename(n_incidents = n)
+
+# Aggregate the number of calls for police service by Date
+daily_calls &lt;- calls %&gt;%
+    count(Date, sort = TRUE) %&gt;%
+   rename(n_calls = n)</code></pre>
+</div>
+<div id="step-3-using-mutating-joins-to-join-the-datasets-by-date" class="section level2">
+<h2>Step 3: Using Mutating Joins to join the datasets by date</h2>
+<p>Here, I use <code>inner_join()</code> to join <code>daily_calls</code> to <code>daily_incidents</code>, assigning the output to a variable named <code>shared_dates</code>. I then inspect the new dataframe.</p>
+<pre class="r"><code>#inner join
+shared_dates&lt;-inner_join(daily_calls, daily_incidents, by=&quot;Date&quot;)
+glimpse(shared_dates)</code></pre>
+<pre><code>## Observations: 776
+## Variables: 3
+## $ Date        &lt;dttm&gt; 2016-09-21, 2017-09-14, 2017-06-01, 2016-06-24, 2016-0...
+## $ n_calls     &lt;int&gt; 165, 165, 162, 161, 160, 160, 159, 158, 158, 157, 156, ...
+## $ n_incidents &lt;int&gt; 60, 97, 100, 105, 100, 89, 109, 97, 93, 72, 73, 68, 80,...</code></pre>
+</div>
+<div id="step-4-inspect-frequency" class="section level2">
+<h2>Step 4: Inspect Frequency</h2>
+<ul>
+<li>In this R-chunk, I reshape the data and visualize the trends for incidents and calls on the same graph. I then create a “long format” of the data frame (called plot_shared_dates) using the <code>gather()</code> function.<br />
+</li>
+<li>I then use <code>ggplot()</code> in order to visualize <code>Date</code> vs. <code>Count</code>, and color by <code>report</code>. I overlay a linear model to visualize the trends in the data.</li>
+</ul>
+<pre class="r"><code># Gather into long format using the &quot;Date&quot; column to define observations
+plot_shared_dates &lt;- shared_dates %&gt;%
+  gather(key = report, value = count, -Date)
+
+# Plot points and regression trend lines
+ggplot(plot_shared_dates, aes(x = Date, y = count, color = report)) +
+  geom_point() +
+  geom_smooth(method = &quot;lm&quot;, formula = y ~ x)</code></pre>
+<p><img src="crime_sf_files/figure-html/frequency-1.png" width="672" /></p>
+</div>
+<div id="step-5-evaluate-correlation-between-trends" class="section level2">
+<h2>Step 5: Evaluate correlation between trends</h2>
+<ul>
+<li>In this code chunk, I calculate the correlation coefficient between the frequency of incidents and calls. This is a way we can discern the relationship between 2 variables. When the correlation coefficient is -1 there is no correlation, and when it is +1 there is perfect correlation.<br />
+To do this I create a new column, <code>month</code>, from the <code>Date</code> column of the previous dataset. I then <code>group_by()</code> this new column in order to <code>summarize()</code> the new frequency counts. I then use the <code>cor()</code> function to calculate the correlation.</li>
+</ul>
+<pre class="r"><code># Calculate correlation coefficient between daily frequencies
+daily_cor &lt;- cor(shared_dates$n_incidents, shared_dates$n_calls)
+daily_cor</code></pre>
+<pre><code>## [1] 0.1469688</code></pre>
+<pre class="r"><code># Summarize frequencies by month
+correlation_df &lt;- shared_dates %&gt;% 
+  mutate(month = month(Date)) %&gt;%
+  group_by(month) %&gt;% 
+  summarize(n_incidents = sum(n_incidents),
+            n_calls = sum(n_calls))
+
+# Calculate correlation coefficient between monthly frequencies
+monthly_cor &lt;- cor(correlation_df$n_incidents, correlation_df$n_calls)
+monthly_cor</code></pre>
+<pre><code>## [1] 0.970683</code></pre>
+<p>We see that there is a correlation coefficient of 0.97 which indicates a high correlation between daily frequencies.</p>
+</div>
+<div id="step-6-filtering-joins-to-better-cleanunderstand-data" class="section level2">
+<h2>Step 6: Filtering joins to better clean/understand data</h2>
+<ul>
+<li>It may be helpful to subset information based on antoher set of values. In this code chunk I use <code>filtering joins</code> to keep the information from each police reported incident and each civilian call on their shared dates in order to calculate similar statistics and compare results.</li>
+</ul>
+<pre class="r"><code># Subset calls to police by shared_dates
+calls_shared_dates &lt;- semi_join(calls, incidents, by= c(&quot;Date&quot;=&quot;Date&quot;))
+
+# Perform a check that we are using this filtering join function appropriately
+identical(sort(unique(shared_dates$Date)), sort(unique(calls_shared_dates$Date)))</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code># Filter recorded incidents by shared_dates
+incidents_shared_dates &lt;- semi_join(incidents, calls, by= c(&quot;Date&quot;, &quot;Date&quot;))</code></pre>
+</div>
+<div id="step-7-ranking-the-top-call-and-incident-crime-types" class="section level2">
+<h2>Step 7: Ranking the top call and incident crime types</h2>
+<ul>
+<li>Here, in this code chunk I rank the top call and incident crime types by frequency and visualize with a histogram.<br />
+I subset the top 15 crime types in descending order by count for both calls and incidents and use the pipe to pass the information to <code>ggplot()</code>.</li>
+</ul>
+<pre class="r"><code># Creating bar chart of the number of calls for each crime
+plot_calls_freq &lt;- calls_shared_dates %&gt;% 
+  count(Descript) %&gt;% 
+  top_n(15, n) %&gt;% 
+  ggplot(aes(x = reorder(Descript, n), y = n)) +
+  geom_bar(stat = &#39;identity&#39;) +
+  ylab(&quot;Count&quot;) +
+  xlab(&quot;Crime Description&quot;) +
+  ggtitle(&quot;Calls Reported Crimes&quot;) +
+  coord_flip()
+  
+
+# Creating bar chart of the number of reported incidents for each crime
+plot_incidents_freq &lt;- incidents_shared_dates %&gt;% 
+  count(Descript) %&gt;% 
+  top_n(15, n)  %&gt;% 
+  ggplot(aes(x = reorder(Descript, n), y = n)) +
+  geom_bar(stat = &#39;identity&#39;) +
+  ylab(&quot;Count&quot;) +
+  xlab(&quot;Crime Description&quot;) +
+  ggtitle(&quot;Incidents Reported Crimes&quot;) +
+  coord_flip()
+
+# Outputting the plots
+plot_calls_freq</code></pre>
+<p><img src="crime_sf_files/figure-html/crime-1.png" width="672" /></p>
+<pre class="r"><code>plot_incidents_freq</code></pre>
+<p><img src="crime_sf_files/figure-html/crime-2.png" width="672" /></p>
+</div>
+<div id="step-8-checking-to-see-if-there-are-similar-locations-of-crimes" class="section level2">
+<h2>Step 8: Checking to see if there are similar locations of crimes</h2>
+<p>We can observe that the crime of highest incidence is Grand Theft From Locked Auto. The 12th most civilian reported crime is “Auto Boost/Strip.” There may be a possibility that the location of the called in crime is similar to the location of the crime incidence. We should check to see if the locations of the most frequent civilian reproted crime and police reported crime are similar.</p>
+<pre class="r"><code># Arranging the top 10 locations of called in crimes in a new variable
+location_calls &lt;- calls_shared_dates %&gt;%
+  filter(Descript == &quot;Auto Boost / Strip&quot;) %&gt;% 
+  count(`Address`) %&gt;% 
+  arrange(desc(n))%&gt;% 
+  top_n(10, n)
+
+# Arranging the top 10 locations of reported incidents in a new variable
+location_incidents &lt;- incidents_shared_dates %&gt;%
+  filter(Descript == &quot;GRAND THEFT FROM LOCKED AUTO&quot;) %&gt;% 
+  count(`Address`) %&gt;% 
+  arrange(desc(n))%&gt;% 
+  top_n(10, n)
+
+# Printing the top locations of each dataset for comparison
+location_calls
+location_incidents</code></pre>
+</div>
+<div id="step-9-san-francisco-density-plot" class="section level2">
+<h2>Step 9: San Francisco density plot</h2>
+<p>Here, I visualize a 2D density plot on a map of San Francisco.<br />
+I use the <code>ggmap</code> package and read a preprocessed map of San Francisco (sf_map)<br />
+I <code>filter()</code> by grand theft auto and save this into a new dataframe. I then overlay the lattitude and longitude data using <code>stat_density_2d()</code></p>
+<pre class="r"><code># Load ggmap
+
+library(ggmap)
+# Read in a static map of San Francisco 
+sf_map &lt;- readRDS(&quot;/datasets/sf_map.RDS&quot;)
+
+# Filter grand theft auto incidents
+auto_incidents &lt;- incidents_shared_dates %&gt;% 
+    filter(Descript == &quot;GRAND THEFT FROM LOCKED AUTO&quot;)
+
+# Overlay a density plot of auto incidents on the map
+ggmap(sf_map) +
+  stat_density_2d(
+    aes(x = X, y = Y, fill = ..level..), alpha = 0.15,
+    size = 0.01, bins = 30, data = auto_incidents,
+    geom = &quot;polygon&quot;)</code></pre>
+<p><img src="crime_sf_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
