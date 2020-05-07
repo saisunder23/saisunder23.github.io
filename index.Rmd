@@ -1,0 +1,18 @@
+---
+title: "My Homepage"
+author: "Sunder Sai"
+output: html_document
+---
+
+Hello and thanks for visiting my website! 
+
+```{r, fig.align="center", echo=FALSE}
+library(jpeg)
+library(grid)
+img<- readJPEG("images/profilepicture.JPG")
+grid.raster(img, just = "center")
+```
+  
+I am a data scientist and researcher in the field of public health. I will be graduating from **Columbia University Mailman School of Public Health**, specializing in Epidemiology and Applied Biostatistics. Check out my resume tab to learn more about me.  
+
+My data science abilities include SQL and relational databases, R-programming, Python, and spatial analysis using Geographic Information Systems. I aspire to use my quantitative background in the field of data analysis and research. 

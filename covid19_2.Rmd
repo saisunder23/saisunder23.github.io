@@ -1,0 +1,370 @@
+---
+title: "COVID-19 Time-Series Analysis"
+author: "Sunder Sai"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(maps)
+library(DT)
+library(broom)
+library(knitr)
+library(janitor)
+```
+
+
+#### In this project, I explore publicly available data from *Johns Hopkins University*. I create time-series graphs of global Corona virus cases, a comparison of several countries, and create a bubble map of cases in the United States.   
+  
+  
+
+
+***
+## **Part 1: COVID-19 Time-Series Graphs**
+***
+
+### 1.1) Reading in the Johns Hopkins Data 
+```{r, include = FALSE}
+corona_raw <- read_csv("C:/Users/Sunder Sai/Desktop/Coding/Carona_Virus/JHU_timeseries/time_series_19-covid-Confirmed.csv")
+```
+* We can begin exploring the Johns Hopkins dataset by reading it in from their Github repository, which can be found [here](https://github.com/CSSEGISandData/COVID-19)  
+* Here is a sneak peek of the data using `head` and `datatable` functions  
+``` {r}
+datatable(head(corona_raw, 10))
+
+````
+  
+  
+### 1.2) Tidying data from 'Wide' format to 'Long' Format  
+* Again, we notice first that the data is in wide format. In order to make the data "tidy" to analyze, we must convert it from wide format to long format using the `pivot_longer` function as shown below
+* This allows for a column specifically for dates and a column specifically for cases
+```{r}
+
+corona_long <- corona_raw %>% 
+  pivot_longer(cols = 5:58,   
+             names_to= "date",
+             values_to="cases")
+
+datatable(head(corona_long, 100))
+
+```
+  
+    
+    
+  
+### 1.3) 'Tidy' variable names 
+* Next I convert the variable names to 'tidy' lowercase names using the `clean_names` function, which is a part of the `janitor` package  
+
+``` {r}
+require(janitor)
+corona_clean <- clean_names(corona_long)
+
+head(names(corona_clean))
+
+```
+  
+    
+      
+      
+### 1.4) Converting date format 
+* The date column is in a character format and must be converted to a date format  
+* Using the `lubridate` package, I convert the format so that the variable is year-month-day
+
+``` {r}
+require(lubridate)
+corona_clean$date_clean <- mdy(corona_clean$date)
+
+head(corona_clean$date_clean)
+
+```
+  
+  
+### 1.5) Time-Series Chart of Global Total Cases  
+* Next, I want to linearly chart total cases by date across the globe 
+* I use the `select()` function to choose `date_clean` and the `cases` variables 
+* Then I group the cases by dates using `group_by` function  
+* Using the `summarize()` function I `sum()` the cases to get `total_cases`  
+* Finally, I graph this using `ggplot2` through `geom_point`and `geom_line`, adjusting the X-axis to be angled and the labels to represent month-day 
+
+```{r}
+
+# Total global cases datas
+date_by_case<- corona_clean %>%
+  select(date_clean, cases) %>%
+  group_by(date_clean) %>%
+  summarize(total_cases=sum(cases))
+
+# first linear graph of date by total cases 
+ggplot(date_by_case) +
+  geom_point(aes(x=date_clean, y=total_cases))+
+  geom_line(aes(x=date_clean, y=total_cases), color="red") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  scale_x_date(date_labels="%b %d", date_breaks = "2 days")+
+  labs(title="Time-series: Global COVID-19 Cases by Date", x= "Date", y="Total Cases")
+```
+
+It may be useful to exclude Mainland China in order to understand the spread of the virus from its origin/epi-center. We can do this by using the `filter()` function and deselecting (`!=`) China
+
+```{r}
+
+excluding_china <- corona_clean %>%
+  filter(country_region!="China") %>%  
+  select(date_clean, cases) %>%
+  group_by(date_clean) %>%
+  summarize(total_cases=sum(cases))
+
+# graph of cases by date excluding mainland 
+ggplot(excluding_china) +
+  geom_point(aes(x=date_clean, y=total_cases))+
+  geom_line(aes(x=date_clean, y=total_cases), color="red") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 60, hjust=1))+
+  scale_x_date(date_labels="%b %d", date_breaks = "2 days")+
+  labs(title="Time-series: COVID19 Cases by Date, Excluding Mainland China",
+       subtitle="by Sunder Sai", 
+       caption="Data Source: Johns Hopkins University, CSSE",
+       x= "Date", y="Total Cases")
+
+
+```
+
+*The graph above displays the total cases of COVID-19 by date, excluding Mainland China. We can observe that the cases follow a near logarithmic curve over time. This graph may be better represented logarithmically*  
+* This can be accomplished by altering the y-axis using the `scale_y_log10()` argument
+
+```{r}
+ggplot(excluding_china) +
+  geom_point(aes(x=date_clean, y=total_cases))+
+  geom_line(aes(x=date_clean, y=total_cases), color="red") +
+  scale_y_log10()+
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 60, hjust=1))+
+  scale_x_date(date_labels="%b %d", date_breaks = "2 days")+
+  labs(title="Time-series: COVID-19 Cases by Date, Excluding Mainland China (Logarithmic)",
+       subtitle="by Sunder Sai", 
+       caption="Data Source: Johns Hopkins University, CSSE",
+       x= "Date", y="Total Cases (Log)")
+
+```
+
+  
+*By converting to a log-scale, the time-series chart above represents a better visualization of the cases across time*  
+
+  
+### 1.6) Comparing Country Trajectories 
+
+```{r, echo=FALSE}
+
+# selected countries 
+selected_countries <- corona_clean %>%
+  filter(country_region=="China" |        # remember to change from Mainland
+          country_region=="Singapore" |
+         country_region== "Japan" |
+         country_region== "US" |
+         country_region== "United Kingdom" |
+         country_region== "Iran" |
+           country_region== "Italy" |
+         country_region== "France"|
+           country_region== "Germany"|
+           country_region== "Spain" |
+           country_region== "Korea, South") %>%
+  select(country_region, date_clean, cases) %>%
+  group_by(country_region, date_clean) %>%
+  summarize(total_cases=sum(cases)) %>%
+  mutate(cumulative_sum = cumsum(total_cases)) %>%
+  filter(cumulative_sum>= 100)
+
+# getting individual country datasets for graph of days since 100th outbreak
+
+# selected countries: CHINA
+china_cases <- selected_countries %>%
+  filter(country_region=="China") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-01-22"))%>%
+  filter(cumulative_sum<=70000)
+
+# selected countries: SINGAPORE
+singapore_cases <- selected_countries %>%
+  filter(country_region=="Singapore") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-03"))
+
+# selected countries: JAPAN
+japan_cases <- selected_countries %>%
+  filter(country_region=="Japan") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-03"))
+
+# selected countries: US
+us_cases <- selected_countries %>%
+  filter(country_region=="US") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-07"))
+
+# selected countries: UK 
+uk_cases <- selected_countries %>%
+  filter(country_region=="United Kingdom") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-18"))
+
+# selected countries: IRAN
+iran_cases <- selected_countries %>%
+  filter(country_region=="Iran") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-24"))%>%
+  filter(cumulative_sum<=70000)
+
+# selected countries: ITALY
+italy_cases <- selected_countries %>%
+  filter(country_region=="Italy") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-22"))%>%
+  filter(cumulative_sum<=70000)
+
+# selected countries: FRANCE
+france_cases <- selected_countries %>%
+  filter(country_region=="France") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-10"))
+
+# selected countries: GERMANY
+germany_cases <- selected_countries %>%
+  filter(country_region=="Germany") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-08"))
+
+# selected countries: SPAIN
+spain_cases <- selected_countries %>%
+  filter(country_region=="Spain") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-28"))
+
+# selected countries: KOREA 
+korea_cases <- selected_countries %>%
+  filter(country_region=="Korea, South") %>%
+  mutate(days_since_hundred = date_clean - as.Date("2020-02-05"))%>%
+  filter(cumulative_sum<=70000)
+
+# plotting 
+
+# geom_point(aes(x=5.6, y=3.9), colour="blue")
+ggplot(china_cases)+
+  #geom_point(aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(aes(x=days_since_hundred, y=cumulative_sum), color="red")+
+  geom_point(aes(y=66529, x=11, color="red"))+
+  geom_text(x=8, y=66829, label="China")+
+ 
+  #geom_point(data=us_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=us_cases, aes(x=days_since_hundred, y=cumulative_sum), color="blue")+
+  geom_point(aes(y=	15389, x=37), color="blue")+
+  geom_text(x=42.5, y=15500, label="US: 15K+")+
+  
+  #geom_point(data=singapore_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=singapore_cases, aes(x=days_since_hundred, y=cumulative_sum), color="orange3")+
+  geom_point(aes(y=4121, x=41), color="orange3")+
+  geom_text(x=46, y=3600, label="Singapore")+
+  
+  #geom_point(data=japan_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=japan_cases, aes(x=days_since_hundred, y=cumulative_sum), color="turquoise4")+
+  geom_point(aes(y=	9992, x=41), color="turquoise4")+
+  geom_text(x=47, y=10000, label="Japan ~10K")+
+  
+  #geom_point(data=uk_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=uk_cases, aes(x=days_since_hundred, y=cumulative_sum), color="tomato4")+
+  geom_point(aes(y=5930, x=26), color="tomato4")+
+  geom_text(x=26, y=10100, label="UK")+
+  
+  #geom_point(data=iran_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=iran_cases, aes(x=days_since_hundred, y=cumulative_sum), color="brown")+
+  geom_point(aes(y=64281, x=17), color="brown")+
+  geom_text(x=14.5, y=64280, label="Iran")+
+  
+  #geom_point(data=italy_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=italy_cases, aes(x=days_since_hundred, y=cumulative_sum), color="navyblue")+
+  geom_point(aes(y=66824, x=18), color="navyblue")+
+  geom_text(x=24, y=66824, label="Italy: 65K+")+
+  
+  #geom_point(data=spain_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=spain_cases, aes(x=days_since_hundred, y=cumulative_sum), color="goldenrod4")+
+  geom_point(aes(y=29317, x=16), color="goldenrod4")+
+  geom_text(x=19.5, y=30000, label="Spain")+
+  
+  #geom_point(data=france_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=france_cases, aes(x=days_since_hundred, y=cumulative_sum), color="darkorange2")+
+  geom_point(aes(y=24688, x=34), color="darkorange2")+
+  geom_text(x=38, y=29000, label="France: ~25K")+
+  
+  #geom_point(data=germany_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=germany_cases, aes(x=days_since_hundred, y=cumulative_sum), color="hotpink4")+
+  geom_point(aes(y=24991, x=36), color="hotpink4")+
+  geom_text(x=44, y=24000, label="Germany: ~25K")+
+  
+  #geom_point(data=korea_cases, aes(x=days_since_hundred, y=cumulative_sum))+
+  geom_line(data=korea_cases, aes(x=days_since_hundred, y=cumulative_sum), color="purple")+
+  geom_point(aes(y=65556, x=33), color="purple")+
+  geom_text(x=37, y=65500, label="S.Korea")+
+
+  theme_bw()+
+  theme(legend.position="none")+
+  scale_x_continuous(limits = c(0,55), breaks=seq(0,55,5))+
+  scale_y_continuous(breaks=seq(100, 65000, 10000))+
+  labs(title="Country Trajectories: Cumulative COVID-19 Cases",
+       subtitle="Days Since 100th Case: by Sunder Sai", 
+       caption="Data Source: Johns Hopkins University, CSSE (as of 3/15/2020)",
+       x="Days Since 100th Case",
+       y="Cumulative Cases")
+
+```
+  
+  
+***
+## **Part 2: Bubble Map of COVID-19 Outbreaks in the U.S.** 
+***
+  
+### 2.1) Subsetting JHU for COVID-19 in the contiguous U.S.   
+* We can use the same dataframe `corona_clean` as above downloaded from Johns Hopkins University  
+* First, I filter the `country_region` to the United States, and then remove extraneous locations for the US region that we would not want in our contiguous map.  
+* I then `group_by` the location variables, and then get the `total_cases` by using `summarize()`
+
+```{r}
+
+country_cases<- corona_clean %>%
+  filter(country_region=="US" 
+         & province_state!="Diamond Princess"
+         & province_state!= "Alaska"
+         & province_state!= "Honolulu County, HI"
+         & province_state!= "Hawaii"
+         & province_state!= "Guam"
+         & province_state!= "Virgin Islands, U.S."
+         & province_state!= "Puerto Rico") %>%
+  select(province_state, lat, long, cases) %>%
+  group_by(province_state, lat, long) %>%
+  summarize(total_cases=sum(cases)) %>%
+  filter(total_cases>0) %>%
+  arrange(total_cases)
+
+datatable(head(country_cases))
+```
+  
+  
+### 2.2) Bubblemap: overlaying location data onto US Map  
+* Using the `mapdata` package, we can get a base state-map of the US and map this using `geom_polygon` 
+* Using geom_point`, we can then plot the longitude (x) and lattitudes (y) where the size of the points is the magnitude of the `total_cases` for that point 
+* I use the `alpha=` argument to change the transparency and the `stroke=` argument to change the thickness of the bubble border. 
+
+```{r}
+
+require(mapdata)
+us_map <- map_data("state")
+
+
+ggplot() +
+  geom_polygon(data = us_map, aes(x=long, y = lat, group=group), fill="gray", color="black", alpha=0.3)+
+  coord_fixed(1.3)+
+  guides(fill=FALSE)+
+  geom_point(data=country_cases, aes(x=long, y=lat, size=total_cases, fill="tomato1"), 
+             color="red3", stroke=1.25, alpha=0.4)+
+  scale_size_continuous(range=c(1,8))+
+  theme_void()+
+  theme(legend.position="none")+
+  labs(title="Bubble Map of US COVID-19 Cases",
+       subtitle="by Sunder Sai", 
+       caption="Data Source: Johns Hopkins University, CSSE (as of 3/15/2020)")
+
+```

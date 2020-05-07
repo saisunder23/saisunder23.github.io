@@ -1,0 +1,226 @@
+---
+title: "Mapping SAT Scores Across the US"
+author: "Sunder Sai"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+## Introduction: 
+#### In this project I will be working with Spatial Packages in R to access, manage, and export spatial data for visualization. I use SAT Math and Verbal test scores that are publicly available from College Board on their [website](https://collegereadiness.collegeboard.org/educators/k-12/educator-downloads). I completed this project as a graduate student at Columbia University Mailman School of Public Health as part of the Advanced GIS & Spatial Analysis course under the guidance of Dr. Jeremy Porter. 
+
+***
+## **Part 1: Projections**
+***
+
+### 1.1) The World Boundaries
+* Here, I load required packages, assign the world boundary file to the object `world` and then examine the units by displaying country names
+```{r, warning=FALSE}
+library(maps) 
+
+oldpar<-par()
+
+world <- map("world", res=0)
+str(world)
+head(world$names)
+plot(world)
+```
+
+
+
+
+### 1.2) US Boundaries
+* Next, I assign the state boundary file to the object `states` and display names of states
+```{r}
+states <- map("state", res=0)
+str(states)
+head(states$names)
+plot(states)
+```
+
+### 1.3) Spatial Lines
+
+* Using `maptools` I create spatial lines objects using long/lat projections
+```{r, warning=FALSE}
+library(maptools)
+
+spworld <- map2SpatialLines(world, proj4string = CRS("+proj=longlat"))
+spstates <- map2SpatialLines(states, proj4string = CRS("+proj=longlat"))
+
+str(spworld, max.level=2)
+str(spstates,max.level=2)
+
+plot(spworld)
+plot(spstates)
+```
+
+### 1.4) Long/Lat Projections
+
+* Using the `rgdal` package we can examine differences in displays of long/lat projections.
+```{r, warning=FALSE}
+library(rgdal)
+
+world.laea <- spTransform(spworld, CRS("+proj=laea +lat_0=0 +lon_0=0"))
+states.laea <- spTransform(spstates, CRS("+proj=laea +lat_0=43.0758 +lon_0=-89.3976"))
+states.epsg <- spTransform(spstates, CRS("+init=epsg:3623"))
+```
+
+* This appears better when we use the Lambert Azmuthal Equal Area (known as laea) projection 
+```{r, warning=FALSE}
+
+#Run Following Code chunk together
+
+
+par(mfrow = c(2, 2), pty = "s", cex.axis = 0.5)
+
+plot(spworld, axes = T)
+title(main = "Longitude and\nLatitude")
+plot(world.laea, axes = T)
+title(main = "Lambert Azimuthal\nEqual Area")
+plot(spstates, axes = T)
+title(main = "Longitude and\nLatitude")
+plot(states.laea, axes = T)
+title(main = "Lambert Azimuthal\nEqual Area")
+```
+
+***
+## **Part 2: Spatial Referencing**
+***
+
+
+### 2.1: Linking Data to Spatial Objects in R
+
+* Here, I create the `map.states` object by calling the states boundaries.
+* I then list the state names by using `strsplit` function to separate their true names from other location aspects
+```{r, warning=FALSE}
+
+par(oldpar)
+
+map.states <- map("state", plot = T, fill = T, res=0)
+str(map.states)
+
+names(map.states)
+head(map.states$names)
+
+list.names.states <- strsplit(map.states$names,":")
+head(list.names.states)
+```
+
+
+### 2.2) Converting to Spatial Polygons
+
+* I then convert the `map.states` object to a Spatial Polygon with IDs set to `map.IDs`
+* I visualize our base map here, below
+```{r}
+map.IDs <- sapply(list.names.states, function(x) x[1])
+head(map.IDs, n=63)
+
+polystates <- map2SpatialPolygons(map.states, IDs = map.IDs,proj4string = CRS("+proj=longlat"))
+
+summary(polystates)
+
+plot(polystates)
+```
+
+### 2.3) Projecting States
+
+* Here, I project the `states` object using the laea projection command
+* I then set and list the spatial polygon IDs for `states.laea`
+* This map is more accurate in terms of curvature of the globe
+```{r}
+states.laea <- spTransform(polystates, CRS("+proj=laea +lat_0=43.0758 +lon_0=-89.3976"))
+plot(states.laea)
+
+sp.IDs <- sapply(slot(states.laea, "polygons"), function(x) slot(x,"ID"))
+head(sp.IDs, n=50)
+```
+
+***
+## **Part 3: SAT Data**  
+***
+
+### 3.1) Downloading data and creating spatial dataframe 
+
+* First, I download the data and view its contents
+* There are 50 states, its abbreviations, and the Math scores
+```{r}
+#START
+sat_math<- read.csv("data/sat_math.csv", stringsAsFactors = F,row.names = 1)
+head(sat_math, n=50)
+```
+
+* Then, I create a spatial dataframe
+* I plot a base laea version of this here below
+```{r}
+states.math <- SpatialPolygonsDataFrame(polystates,sat_math)
+summary(states.math)
+
+states.math.laea <- spTransform(states.math, CRS("+proj=laea +lat_0=43.0758 +lon_0=-89.3976"))
+
+plot(states.math.laea)
+```
+
+* We can view a brief summary of this below
+```{r}
+summary(states.math.laea)
+```
+
+### 3.2) Color Ramps for Mapping
+
+* We need to first install and load the color brewer package
+* Then we can visualize the different color ramps as seen below
+```{r}
+library(RColorBrewer)
+display.brewer.all()
+display.brewer.pal(5, "Greys")
+```
+
+* These different color ramps can be used to represent different variations in SAT scores
+
+***
+## **Part 4) Mapping**
+***
+
+### 4.1) Visualize distribution of SAT math scores
+
+* I use the `classInt` package to set class categories 
+* Using the following code, I visualize the distribution of SAT verbal Scores broken into Quantiles
+
+```{r, warning=FALSE}
+library(classInt)
+
+plotvar <- states.math.laea$math
+nclr <- 5
+plotclr <- brewer.pal(nclr, "Greys")
+plotclr
+class <- classIntervals(plotvar, nclr, style = "quantile")
+class
+```
+
+* Here we can check out the hex codes for the different colors 
+* Below is also a black and white map
+```{r, warning=FALSE}
+colcode <- findColours(class, plotclr, digits = 3)
+colcode
+plot(states.math.laea, col = colcode)
+```
+
+### 4.2) Adding color, legends, and titles
+
+* Finally, we can set a color scheme of "blues", a `style` of "quantiles" as well as a title and legend 
+
+```{r}
+plotclr <- brewer.pal(nclr, "Blues")
+class <- classIntervals(plotvar, nclr, style = "quantile")
+colcode <- findColours(class, plotclr, digits = 3)
+plot(states.math.laea, col = colcode, border = "grey",axes = F)
+title(main = "SAT Math Scores in 2010 \n by Sunder Sai", 
+      sub = "Data Source: College Board")
+legend("bottomleft", legend = names(attr(colcode,"table")), 
+       fill = attr(colcode, "palette"), cex=0.45)
+
+```
+
+

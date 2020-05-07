@@ -1,0 +1,279 @@
+---
+title: "Exploring NYTimes COVID-19 Data"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(maps)
+library(DT)
+library(broom)
+library(knitr)
+library(janitor)
+```
+  
+***  
+#### In this project, I explore publicly available COVID-19 data from The New York Times. By geo-mapping the data and using simple linear regression, we can understand more about the spread of the virus across the US and New York. 
+  
+  
+***
+## **Part 1: Mapping COVID-19 with NY Times Data**  
+***
+  
+  
+### 1.1) Creating United States Base Map 
+
+
+```{r}
+
+state_maps <- map_data("state")
+
+ggplot(data = state_maps) +
+  geom_polygon(aes(x = long, y = lat, group = group), 
+               color = "white", fill = "dodgerblue") +
+  theme_void()+
+  labs(title="US State Map")
+
+```
+  
+  
+### 1.2) Reading COVID-19 Data  
+
+* First I will read in the New York Times COVID-19 State raw case data which can be found [here](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv)  
+
+* I then filter the data to only include the most recent day. I organize it to be arranged by descending day.
+* I use the `datatable` and `head` functions to display a clean table.
+
+``` {r}
+covid_state <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+covid_state_recent <- covid_state %>%
+  mutate(most_recent = max(date)) %>%
+  filter(date == most_recent) %>%
+  select(-most_recent) # descending date
+
+datatable(head(covid_state_recent, 100))
+
+```
+
+### 1.3) Joining State Maps to COVID-19 State Data 
+
+* I will now join COVID-19 data to the `state_map` data frame. I use a `left_join` that keeps all states from the state_map data frame, even if they are not present in COVID-19 data.  
+
+* Some cleaning with string manipulation must be done, as the states are lowercase in the `state_map` data
+
+```{r}
+
+covid_state_recent <- covid_state_recent %>%
+  mutate(state = str_to_lower(state))
+
+state_map_covid <- state_maps %>%
+  left_join(covid_state_recent, by = c("region" = "state"))
+
+```
+  
+  
+  
+### 1.4) Visualizing Map using Log Cases
+
+* I will now use `log(cases)` to visualize the variation between states, as it is difficult to see using just cases    
+* Additionally, I use the `scale_fill_gradient` argument to recolor the map so that higher log-cases appear in darker blues and lower log-cases appear in lighter blues
+
+```{r}
+
+ggplot(data = state_map_covid) +
+  geom_polygon(aes(x = long, y = lat, 
+                   group = group, 
+                   fill = log(cases)),color = "white") +
+  theme_void() +
+  scale_fill_gradient(low = "#56B1F7", high = "#132B43")+
+  labs(title = "COVID-19 Cases by State", 
+       fill = "Log Cases", 
+       subtitle = "05/04/2020",
+       caption = "New York Times COVID-19 Data")
+
+```
+  
+   
+    
+***
+## **Part 2 Predicting COVID-19 Cases in New York State: Regression Analysis** 
+***
+  
+  
+### 2.1) Exploring NYTimes cases/deaths state data   
+The New York Times has also made publicly available daily COVID-19 confirmed cases and confirmed deaths on their github page: https://github.com/nytimes/covid-19-data
+
+* Let's take a look at New York State data 
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+us_states <- read_csv("C:/Users/Sunder Sai/Desktop/Coding/R_Covid_Portfolio/us-states.csv")
+```
+
+### 2.2) Transforming, Tidying, and Replacing Infinite Numbers   
+
+* First I filter data for the state of interest: New York. I also create new variables using `mutate` for `log_cases` and `log_deaths` transforming using the `log` function
+* We also see the data is in wide format. In order to make the data "tidy" to analyze, we must convert it from wide format to long format using the `pivot_longer` function as shown below
+* This allows for a column specifically for "type_log" (cases or deaths) and a column for "number" (log values for the case/death)
+* Finally, converting to log scale transforms all values of 0 to `-Inf` or negative infintity. Using `if_else` I set values of this column to `NA_real_` if the number is infinite. 
+
+```{r}
+log_ny <- us_states %>%
+  filter(state=="New York")%>%
+  mutate(log_cases=log(cases),
+         log_deaths=log(deaths)) %>%
+  pivot_longer(cols=6:7,
+               names_to = "type_log", 
+               values_to = "number") %>%
+  mutate(number = if_else(is.infinite(number), NA_real_, number))
+  
+datatable(head(log_ny))
+
+```
+
+### 2.3) Scatter Plot: NY State COVID-19 confirmed log-cases vs. log-deaths
+  
+```{r}
+  
+ggplot(data=log_ny)+
+  geom_point(aes(x=date, y=number, color=type_log))+
+  labs(title="Time-Series: COVID-19 Log Cases vs. Log Deaths Over",
+       x="Date",
+       y="Count (Log)",
+       color="Log Type")+
+  theme_bw()
+  
+``` 
+
+```{r}
+datatable(head(us_states, 50))
+```
+
+### 2.4) Simple Regression Model 
+* Here I create a new variable called `days` by subtracting `as.Date("2020-03-01")` from the `date` variable
+* I then fit a simple linear regression with `log_cases` as the outcome and `days` as your predictor.
+* R automatically treats `days` as a continuous numeric, so each unit increase in `days` will represent 1 day since the first day in this New York State dataset (03/01/20)
+* The R-squared of this model along with the table of slope parameter estimates is reported using `kable()` function
+* We can now use the parameter estimates to make predictions about future dates. We usually do not want to estimate outside of our data range, but in this case we can use information from past data to predict cases a few days in the future
+
+```{r echo=T, results= 'hide'}
+
+wide_ny <- log_ny %>%
+  pivot_wider(
+    names_from = type_log,
+    values_from = number) %>%
+  mutate(days = date-as.Date("2020-03-01"))
+
+days_logcases_model <- lm(log_cases ~ days, data=wide_ny)
+
+summary(days_logcases_model)
+tidy_dayslogcases <- tidy(days_logcases_model)
+```
+
+```{r}
+kable(tidy_dayslogcases)
+```
+  
+The overall R-squared is 0.9626. This means that 96.26% of the variance in log cases can be explained by the days variable. 
+  
+  
+  
+### 2.5) Creating Function: Predicting COVID-19 Cases 
+
+* Here I wrote a function that uses the model intercept and parameter estimates to predict the number of confirmed cases in New York state on a given date. 
+* This function takes the number of days from the first data point in New York State (03/01/20) and returns the number of cases (not the log number of cases). 
+* Using this function, I make predictions for confirmed cases in New York state for 03/30/20, 03/31/20, 04/01/20 and 04/02/20
+
+```{r echo=T, results= 'hide'}
+library(lubridate)
+predict_cases <- function(string) {
+  days <- as.numeric(difftime(string, "2020-03-01"), units="days")
+  log_cases <- 1.2873979 + 0.3759335*days
+  expected_cases <- exp(log_cases)
+  return(expected_cases)
+}
+
+predict_cases("2020-03-30")   # 196706.8
+predict_cases("2020-03-31")   # 286474
+predict_cases("2020-04-01")   # 417206.4
+predict_cases("2020-04-02")   # 607598.7
+
+```
+*   03/30/20: 196706.8 predicted cases  
+*   03/31/20: 286474 predicted cases  
+*   04/01/20: 417206.4 predicted cases  
+*   04/02/20: 607598.7 predicted cases  
+
+### 2.6) Model Prediction vs. Actual Recorded
+
+* Here, I compare the model prediction for 03/30/20 against the actual recorded cases in New York state for 03/30/20.
+
+```{r echo = T, results = 'hide'}
+predict_cases("2020-03-30") # 196706.8 predicted cases
+
+wide_ny %>%
+  filter(date=="2020-03-30") %>%
+  select(cases) # 67174 actual cases 
+```
+
+From our equation there are 196706.8 predicted cases whereas there were actually 67174 actual cases. Our model does not take into account other variables besides days. Variables such as social distancing and weather and more can have an impact on the actual cases for any given day.
+  
+   
+   
+### 2.7) Scatterplot with Regression line 
+* Here, I create a scatter plot of `log_cases` by `days` using the dataset you used to model New York state log cases
+* I plot a modeled regression line to the plot by using a `geom_abline()` statement that takes in the intercept estimate from our model and the parameter estimate for `days`
+
+```{r}
+
+ggplot(data=wide_ny)+
+  geom_point(aes(x=days, y=log_cases), color="blue")+
+  geom_abline(intercept=1.2873979, slope = 0.3759335, 
+              linetype= "dashed", color="darkred")+
+  labs(title="Log Cases by Days with Regression Line",
+       x="Days",
+       y="Log Cases")+
+  theme_bw()
+
+```
+
+  
+*The data point for the actual log cases on 3/30/2020 appears to be lower than the regression line for our predicted. This explains why our predicted log cases is higher than our actual log cases.*
+
+
+### 2.8) Is this model a good fit?
+We can use updated data to assess whether the model is a good fit
+```{r include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+nyt_us_states <- read_csv("C:/Users/Sunder Sai/Desktop/Coding/R_Covid_Portfolio/nyt_us_states.csv")
+
+```
+* I have recreated the graph of `log_cases` by `days` using the updated data and included the previous regresison line. 
+```{r}
+log_nytimes <- nyt_us_states %>%
+  filter(state=="New York")%>%
+  mutate(log_cases=log(cases),
+         log_deaths=log(deaths),
+         days = date-as.Date("2020-03-01"),
+         log_deaths = if_else(is.infinite(log_deaths), NA_real_, log_deaths))
+
+ggplot(data=log_nytimes)+
+  geom_point(aes(x=days, y=log_cases), color="blue")+
+  geom_abline(intercept=1.2873979, slope = 0.3759335, color="red")+
+  labs(title="Log Cases by Days with Regression Line",
+       subtitle="NYTimes Data",
+       x="Days",
+       y="Log Cases")+
+  theme_bw()
+```
+
+*As shown above, the regression line ran with older data isn't the best fit for the newer data. The newer data shows that log cases are decreasing, whereas the regression line using older data continues to reach upwards.* 
+
+  

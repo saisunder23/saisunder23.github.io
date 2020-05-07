@@ -1,0 +1,36 @@
+name: "Sunder's Website"
+navbar:
+  title: "Sunder Sai"
+  type: inverse
+  left:
+    - text: "Home"
+      icon: fa-home
+      href: index.html
+    - text: "Resume"
+      icon: fa-user
+      href: about.html
+    - text: "Data Science Projects"
+      icon: fa-rocket
+      menu:
+        - text: "COVID-19 Time-Series Analysis"
+          href: covid19_2.html
+        - text: "Exploring COVID-19"
+          href: covid19_1.html
+        - text: "Mapping Crime in San Francisco"
+          href: crime_sf.html
+        - text: "Mapping SAT Scores"
+          href: sat.html
+  right:
+    - text: "Contact Me"
+      icon: fa-envelope
+      href: mailto:saisunder23@gmail.com
+    - icon: fa-github
+      href: https://github.com/saisunder23
+    - icon: fa-linkedin
+      href: https://www.linkedin.com/in/sunder-sai
+    - icon: fa-twitter
+      href: https://twitter.com/_SunderThunder_
+output:
+  html_document:
+    theme: cosmo 
+    highlight: textmate

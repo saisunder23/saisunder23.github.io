@@ -1,0 +1,73 @@
+---
+title: "My Resume"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+***
+## Education & Honors
+***
+ 
+### **Columbia University in the City of New York**, Class of 2020, New York, NY  
+#### Master of Public Health – Department of Epidemiology & Applied Biostatistics                             
+*  Mission Scholarship Award recipient. Certificate in Health Policy with a concentration in Applied Biostatistics    
+*  Relevant coursework: Health Data Science, Healthcare Payment Systems, Applied Epidemiological Analysis, Analysis of Categorical Data, SQL & Relational Databases, Advanced GIS in Python & R-programming  
+  
+  
+### **The Ohio State University Honors College**, Class of 2018, Columbus, OH  
+#### Bachelor of Science in Neuroscience and Political Science (double major)	   GPA: 3.741  
+* Phi Beta Kappa Honors, Magna Cum Laude w/Honors Research Distinction  
+* Distinction Scholarship – recipient of full scholarship   
+
+***
+## Technical Skills   
+ 
+*  **Python & Pysal**: proficient – NumPy, Pandas, Matplotlib, control flow and filtering  
+*  **MySQL & PostgreSQL**: advanced proficiency – complex queries, advanced and multiple joins  
+*  **R & R-Markdown**: advanced proficiency – tidyverse, cleaning/joining data, loops/functions  
+*  **Machine learning & statistics/probability**  
+*  **GIS:** advanced proficiency – data visualization, geospatial analysis w/sf & raster  
+*  **SAS, Stata, SPSS:** advanced proficiency – linear/logistic regression, data management   
+*  **MS Excel, MS Access:** advanced proficiency – VBA, pivot tables, vlook up, power-queries  
+*  **Linear/logistic regression**, multilevel modeling  
+
+***
+## Professional/Research Experience
+*** 
+
+### **COVID-19 Researcher & Data Consultant** 
+#### (March 2020 - current)  
+*  Consulting on various COVID-19 research projects for **Dr. Jeffrey Shaman** and **Dr. Micaela Martinez** at Columbia Mailman
+*  Used R-programming and GIS to visualize COVID-19 impacts on vulnerable populations including disparities related to pre-existing conditions, race and ethnicity, hospital bed usage, and commute time. Managed data and produced data-related reports
+*  Utilized SQL queries to prepare datasets for statistical analysis. Used R ggplot2 to chart COVID-19 predictive models
+  
+  
+ 
+### **United States Government**
+#### Student Trainee (2016 - Current)
+* Cleaned, standardized, and analyzed complex data to assist investigative teams in criminal casework 
+* Ran queries using government databases, utilized SQL and relational databases, successfully aiding analysts and agents  
+* Gathered and visualized geospatial data using mapping software. Created maps, graphs, and spreadsheets.  
+* Analyzed classified and open source research. Collaborated in teams to co-author reports/products for intelligence community.  
+  
+  
+### **Center for the Promotion of Mental Health & Juvenile Justice**, Columbia University   
+#### Graduate Research Assistant, Dept. of Epidemiology (October 2019 – Present)                              
+* Studying post-traumatic stress symptoms (PTSS) and juvenile adjudication. Culmination of Master’s thesis in Epidemiology   
+* Coding and regression analysis through SAS and R statistics software using Texas psychiatric youth assessment database   
+
+
+### **Columbia University Center for Injury Epidemiology & Prevention**, Columbia University  
+#### Graduate Research Assistant, Dept. of Epidemiology (January 2019 – October 2019)
+* Studied substance abuse & impaired driving. Practicum project researching hit-and-run motor vehicle crash homicide
+* Coding and regression analysis through SAS statistics software using Fatal Analysis Reporting System (FARS) database
+
+### **Cleveland Clinic Science Internship**, Cleveland, OH                                                    
+#### Clinical Research Intern (2012-2014)                                                                    
+* Collected and analyzed data from patient records, completed observational analysis, conducted literature reviews
+* Presented research findings regarding aspiration pneumonia (2012) and COPD (2013) at Cleveland Clinic Forum
+* 2013 Peer Mentor – mentored and oversaw students from two different hospitals in clinical research and data collection
+
+
