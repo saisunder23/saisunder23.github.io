@@ -23,7 +23,7 @@ navbar:
         - text: "Mapping SAT Scores"
           href: sat.html
   right:
-    - text: "Contact Me"
+    - icon: fa-envelope
       href: mailto:saisunder23@gmail.com
     - icon: fa-github
       href: https://github.com/saisunder23
