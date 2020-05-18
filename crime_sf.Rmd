@@ -32,8 +32,6 @@ In this R-markdown project, I leverage publicly available data to interpret crim
 
 ```{r Reading Data, message=FALSE, warning=FALSE, results=FALSE}
 
-setwd("C:/Users/Sunder Sai/Desktop/Coding/R-programming/GitHub/saisunder23.github.io")
-
 #Load libraries
 library(lubridate)
 library(tidyverse)
