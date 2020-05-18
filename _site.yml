@@ -13,11 +13,11 @@ navbar:
       icon: fa-rocket
       menu:
         - text: "COVID-19 Projects"
-        menu: 
-          - text: "COVID-19 Time-Series Analysis"
-            href: covid19_2.html
-          - text: "Exploring COVID-19"
-            href: covid19_1.html
+          menu: 
+            - text: "COVID-19 Time-Series Analysis"
+              href: covid19_2.html
+            - text: "Exploring COVID-19"
+              href: covid19_1.html
         - text: "Mapping Crime in San Francisco"
           href: crime_sf.html
         - text: "Mapping SAT Scores"
