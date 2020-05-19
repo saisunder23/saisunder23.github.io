@@ -6,9 +6,6 @@ navbar:
     - text: "Home"
       icon: fa-home
       href: index.html
-    - text: "Resume"
-      icon: fa-user
-      href: about.html
     - text: "Data Science Projects"
       icon: fa-rocket
       menu:
@@ -22,6 +19,9 @@ navbar:
           href: crime_sf.html
         - text: "Mapping SAT Scores"
           href: sat.html
+    - text: "Resume"
+      icon: fa-user
+      href: about.html
   right:
     - icon: fa-envelope
       href: mailto:saisunder23@gmail.com
