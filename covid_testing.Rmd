@@ -1,0 +1,172 @@
+---
+title: "Interactive Maps: COVID-19 Testing Locations using Leaflet"
+author: "Sunder Sai"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyr)
+library(tidyverse)
+library(broom)
+library(lubridate)
+library(janitor)
+library(knitr)
+```
+
+***
+#### In this project, I use data to clean and plot **COVID-19 Testing Locations.** Using the `leaflet` package, I make these maps interactive with zoom capabilities and pop-up displays with information specific to each datapoint on the map. I also show how to cluster data points together and swap map backgrounds. These interactive maps can serve as an important resource for those seeking information regarding testing locations near them.       
+***  
+  
+### 1.1) Reading in data and cleaning  
+
+* Testing location data has been made publicly available by OscarHealth on their Github website found [here](https://github.com/oscarhealth/covid19-testing)      
+* I will first read the dataset in, and then clean the dataset by removing unwanted columns such as those that include missing data      
+* This includes removing the following columns: `visible`, `facility_id`, `phone`, `facility_display_note`, and those that start with `hours_of_operation`    
+
+```{r}
+
+testing_location <- read.csv("data/testing_locations.csv")
+testing_location <- select(testing_location, -starts_with("hours_of_operation"))
+testing_location$visible <- NULL
+testing_location$facility_id <- NULL
+testing_location$phone <- NULL
+testing_location$facility_display_note <- NULL
+
+kable(head(testing_location))
+```
+
+### 1.2) Creating Full Address and Filtering for NYState     
+* Next, I notice that the addresses are split up  by street, zipcode, and state. I would like a variable with these aspects consolidated in one column    
+* We can do this using the `paste` function and separating each portion with comma    
+```{r}
+testing_location$full_address <- paste(testing_location$address, 
+                                       testing_location$city, 
+                                       testing_location$state,
+                                       testing_location$zip, 
+                                       sep = ", ")
+head(testing_location$full_address)
+```
+
+  
+  
+* I then want to rename the latitude and longitude variables    
+* Next, I want to filter for New York State and New York City    
+```{r}
+# renaming latitude = lat, longitude = lng 
+testing_location <- testing_location %>% 
+  rename(latitude = lat, 
+         longitude = lng)
+
+# filtering for new york
+ny_testinglocation <- testing_location %>%
+  filter(state == "NY")
+
+# filtering for new york city 
+nyc_testinglocation <- ny_testinglocation %>%
+  filter(city == "Bronx"|
+           city == "New York"|
+           city == "Queens"|
+           city == "Brooklyn"|
+           city == "Staten Island")
+
+kable(head(nyc_testinglocation))
+```
+
+
+### 1.3) Plotting basic points and exploring leaflet  
+* Below, I plot the New York City testing points with no background to see the distribution of points      
+
+```{r}
+require(leaflet)
+
+# graphing with no background: nyc
+ggplot(data = nyc_testinglocation) +
+  geom_point(aes(x = longitude, y = latitude), alpha = 0.2) +
+  theme_bw() 
+```
+
+* I also check out the leaflet package before adding in the points.   
+* Using `addTiles()`, I set a generic background and then through `setView` I can set the map frame to focus in on New York 
+```{r}
+# basic leaflet background 
+require(leaflet)
+leaflet() %>%
+  addTiles() %>%
+  setView(-74, 40.755, zoom = 11.5)
+```
+
+
+### 1.4) Creating Interactive Maps with Leaflet    
+
+* Below, I create an interactive map with points set to the latitude and longitude of the testing data      
+* I also include the `popup` argument that provides the relevant information for the Facility Name and the full Address details    
+```{r}
+map <- leaflet(data=ny_testinglocation) %>%
+  addTiles() %>%
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude, 
+    popup = paste("Facility Name:", nyc_testinglocation$facility_name, "<br>",
+                  "Address:", nyc_testinglocation$full_address))
+
+map
+```
+
+* This map is **interactive** so feel free to zoom in out.   
+* Click on each point to see the relevant information, including **Facility Name** and **Address info.** Pretty cool!  
+
+
+### 1.5) Adding Cluster Points and Changing Backgrounds      
+
+* The points, however, may look a little crowded together      
+* We can cluster nearby points together into spatial clusters to make it more visually appealing    
+* This can be done through the `clusterOptions = markerClusterOptions()` argument     
+```{r}
+
+map1 <- leaflet(data=ny_testinglocation) %>%
+  addTiles() %>%
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude, 
+    popup = paste("Facility Name:", nyc_testinglocation$facility_name, "<br>",
+                  "Address:", nyc_testinglocation$full_address),
+    clusterOptions = markerClusterOptions())
+
+map1
+```
+**Zooming** into the map can dive into the clusters of points, revealing further sub-clusters. This is a great way to visualize clustering of testing locations on the interactive map.  
+
+**Backgrounds:**  
+* We can also change the backgrounds by passing our `map` object through the `addProviderTiles()` function      
+```{r}
+map %>% addProviderTiles(providers$Esri.NatGeoWorldMap)
+
+```
+
+* Above is Esri's Nat-Geo World Map background   
+
+   
+```{r}
+map %>% addProviderTiles(providers$CartoDB.Positron)
+```
+
+* Here is the positron and darkmatter background 
+
+   
+```{r}
+map %>% addProviderTiles(providers$Stamen.Toner)
+```
+
+* Above is the black and white toner background 
+
+   
+```{r}
+map %>% addProviderTiles(providers$MtbMap)
+```
+
+* Here, is the MTB mountain bike and trail map 
