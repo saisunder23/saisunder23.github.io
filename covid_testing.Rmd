@@ -142,31 +142,30 @@ map1
 **Zooming** into the map can dive into the clusters of points, revealing further sub-clusters. This is a great way to visualize clustering of testing locations on the interactive map.  
 
 **Backgrounds:**  
-* We can also change the backgrounds by passing our `map` object through the `addProviderTiles()` function      
+*  We can also change the backgrounds by passing our `map` object through the `addProviderTiles()` function      
 ```{r}
 map %>% addProviderTiles(providers$Esri.NatGeoWorldMap)
 
 ```
 
-* Above is Esri's Nat-Geo World Map background   
+*  Above is Esri's Nat-Geo World Map background   
 
    
 ```{r}
 map %>% addProviderTiles(providers$CartoDB.Positron)
 ```
 
-* Here is the positron and darkmatter background 
+*  Here is the positron and darkmatter background 
 
    
 ```{r}
 map %>% addProviderTiles(providers$Stamen.Toner)
 ```
-
-* Above is the black and white toner background 
+*  Above is the black and white toner background 
 
    
 ```{r}
 map %>% addProviderTiles(providers$MtbMap)
 ```
 
-* Here, is the MTB mountain bike and trail map 
+*  Here, is the MTB mountain bike and trail map 
