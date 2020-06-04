@@ -16,10 +16,57 @@ library(broom)
 library(lubridate)
 library(janitor)
 library(knitr)
+library(leaflet)
 ```
 
 ***
-#### In this project, I use data to clean and plot **COVID-19 Testing Locations.** Using the `leaflet` package, I make these maps interactive with zoom capabilities and pop-up displays with information specific to each datapoint on the map. I also show how to cluster data points together and swap map backgrounds. These interactive maps can serve as an important resource for those seeking information regarding testing locations near them.       
+```{r, echo=FALSE}
+testing_location <- read.csv("data/testing_locations.csv")
+testing_location <- select(testing_location, -starts_with("hours_of_operation"))
+testing_location$visible <- NULL
+testing_location$facility_id <- NULL
+testing_location$phone <- NULL
+testing_location$facility_display_note <- NULL
+
+testing_location$full_address <- paste(testing_location$address, 
+                                       testing_location$city, 
+                                       testing_location$state,
+                                       testing_location$zip, 
+                                       sep = ", ")
+
+
+# renaming latitude = lat, longitude = lng 
+testing_location <- testing_location %>% 
+  rename(latitude = lat, 
+         longitude = lng)
+
+# filtering for new york
+ny_testinglocation <- testing_location %>%
+  filter(state == "NY")
+
+# filtering for new york city 
+nyc_testinglocation <- ny_testinglocation %>%
+  filter(city == "Bronx"|
+           city == "New York"|
+           city == "Queens"|
+           city == "Brooklyn"|
+           city == "Staten Island")
+
+
+map <- leaflet(data=ny_testinglocation) %>%
+  addTiles() %>%
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude, 
+    popup = paste("Facility Name:", nyc_testinglocation$facility_name, "<br>",
+                  "Address:", nyc_testinglocation$full_address))
+
+map
+
+```
+
+
+#### In this project, I will show how to clean and plot data for **COVID-19 Testing Locations** to produce the interactive map you see above. Using the `leaflet` package, I make these maps interactive through zoom and pop-up displays with information specific to each datapoint on the map. I also show how to cluster data points together and swap map backgrounds. These interactive maps can serve as an important resource for those seeking information regarding testing locations near them.       
 ***  
   
 ### 1.1) Reading in data and cleaning  
