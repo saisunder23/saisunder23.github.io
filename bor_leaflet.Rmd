@@ -24,6 +24,7 @@ library(shiny)
 library(crosstalk)
 
 
+
 bor <- read.xlsx("C:/Users/Sunder Sai/Desktop/Coding/R-programming/black_owned_restaurants/bor_nyc.xlsx", 
                 startRow = 4)
 
@@ -63,7 +64,8 @@ Column {data-width=600}
 sd_bor %>%
   leaflet::leaflet() %>%
   leaflet::addProviderTiles(providers$OpenStreetMap) %>%
-  leaflet::setView(-74.00, 40.71, zoom = 10) %>%
+  # leaflet::setView(-74.00, 40.71, zoom = 10) %>%
+  leaflet::fitBounds(-74.353249,40.493287,-73.596566,40.91388) %>%
   leaflet::addMarkers(
     lng = ~long,
     lat = ~lat, 
