@@ -51,6 +51,41 @@ sd_bor <- SharedData$new(bor)
 
 ```
 
+
+
+Column {data-width=600}
+---------------------------------------------------------
+
+### Interactive Map
+
+``` {r map, echo=FALSE, message= FALSE, warning=FALSE}
+
+sd_bor %>%
+  leaflet::leaflet() %>%
+  leaflet::addProviderTiles(providers$OpenStreetMap) %>%
+  leaflet::setView(-74.00, 40.71, zoom = 10) %>%
+  leaflet::addMarkers(
+    lng = ~long,
+    lat = ~lat, 
+    popup = paste("<b> Restaurant:</b>", bor$Restaurant, "<br>",
+                  "<b> Address:</b>", bor$Address, "<br>",
+                  "<b> Neighborhood/Area:</b>", bor$Neighborhood, "<br>",
+                  "<b> Borough:</b>", bor$Borough, "<br>",
+                  "<b> Service:</b>", bor$Service, "<br>",
+                  "<b> Phone:</b>", bor$Phone, "<br>",
+                  "<a href='",
+                  bor$Website, 
+                  "' target='_blank'>",
+                  "Click Here for Website</a>")
+                  ) %>%
+  leaflet::addMeasure()
+
+```
+
+
+
+
+
 Column {data-width=400}
 ------------------------------------------------------
 
@@ -91,39 +126,17 @@ sd_bor %>%
       deferRender = TRUE, 
       scrollY = 300,
       scroller = TRUE,
+      columnDefs = list(
+        list(
+          visible = FALSE, 
+          targets = c(7,8)
+        )
+      ),
     buttons = list(
       "csv", # download as .csv
       "excel" # download as .xlsx
       )
     )
   )
-```
-
-Column {data-width=600}
----------------------------------------------------------
-
-### Interactive Map
-
-``` {r map, echo=FALSE, message= FALSE, warning=FALSE}
-
-sd_bor %>%
-  leaflet::leaflet() %>%
-  leaflet::addProviderTiles(providers$OpenStreetMap) %>%
-  leaflet::addMarkers(
-    lng = ~long,
-    lat = ~lat, 
-    popup = paste("<b> Restaurant:</b>", bor$Restaurant, "<br>",
-                  "<b> Address:</b>", bor$Address, "<br>",
-                  "<b> Neighborhood/Area:</b>", bor$Neighborhood, "<br>",
-                  "<b> Borough:</b>", bor$Borough, "<br>",
-                  "<b> Service:</b>", bor$Service, "<br>",
-                  "<b> Phone:</b>", bor$Phone, "<br>",
-                  "<a href='",
-                  bor$Website, 
-                  "' target='_blank'>",
-                  "Click Here for Website</a>")
-                  ) %>%
-  leaflet::addMeasure()
-
 ```
 
