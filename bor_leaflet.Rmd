@@ -1,0 +1,129 @@
+---
+title: "NYC Black Owned Restaurants"
+author: "Sunder Sai"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    theme: paper
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(broom)
+library(janitor)
+library(openxlsx)
+library(DT)
+library(leaflet)
+library(flexdashboard)
+library(shiny)
+library(crosstalk)
+
+
+bor <- read.xlsx("C:/Users/Sunder Sai/Desktop/Coding/R-programming/black_owned_restaurants/bor_nyc.xlsx", 
+                startRow = 4)
+
+# remove extra column
+bor <-  select(bor, -starts_with("x"))
+
+
+# separate column for lat and long
+bor <- separate(bor, 
+         Raw.Chunk,
+         into = c("lat", "long"),
+         sep = "!4d")
+
+# change from character to numeric 
+
+bor$lat <- as.numeric(bor$lat)
+bor$long <- as.numeric(bor$long)
+
+# reorder columns for datatable 
+col_names <- c("Restaurant", "Address", "Neighborhood", "Borough", "Service", 
+               "Phone", "Website", "lat", "long")
+bor <- bor[, col_names]
+
+sd_bor <- SharedData$new(bor)
+
+```
+
+Column {data-width=400}
+------------------------------------------------------
+
+
+### Filters 
+
+```{r filters, echo=FALSE, message= FALSE, warning=FALSE}
+
+bscols(
+  filter_checkbox(
+    id = "Borough",
+    label= "Borough",
+    sharedData= sd_bor,
+    group= ~Borough
+    )
+  )
+
+```
+
+
+### Datatable 
+
+```{r datatable, echo=FALSE, message= FALSE, warning=FALSE}
+
+sd_bor %>%
+  DT::datatable(
+    filter = "top", # allows filtering on each columns
+    extensions = c(
+      "Buttons", # add download buttons
+      "Scroller" # for scrolling instead
+    ),
+    rownames=FALSE, # remove rownames
+    style = "bootstrap",
+    class = "compact",
+    width = "100%",
+    options = list(
+      dom = "Blrtip", 
+      deferRender = TRUE, 
+      scrollY = 300,
+      scroller = TRUE,
+    buttons = list(
+      "csv", # download as .csv
+      "excel" # download as .xlsx
+      )
+    )
+  )
+```
+
+Column {data-width=600}
+---------------------------------------------------------
+
+### Interactive Map
+
+``` {r map, echo=FALSE, message= FALSE, warning=FALSE}
+
+sd_bor %>%
+  leaflet::leaflet() %>%
+  leaflet::addProviderTiles(providers$OpenStreetMap) %>%
+  leaflet::addMarkers(
+    lng = ~long,
+    lat = ~lat, 
+    popup = paste("<b> Restaurant:</b>", bor$Restaurant, "<br>",
+                  "<b> Address:</b>", bor$Address, "<br>",
+                  "<b> Neighborhood/Area:</b>", bor$Neighborhood, "<br>",
+                  "<b> Borough:</b>", bor$Borough, "<br>",
+                  "<b> Service:</b>", bor$Service, "<br>",
+                  "<b> Phone:</b>", bor$Phone, "<br>",
+                  "<a href='",
+                  bor$Website, 
+                  "' target='_blank'>",
+                  "Click Here for Website</a>")
+                  ) %>%
+  leaflet::addMeasure()
+
+```
+

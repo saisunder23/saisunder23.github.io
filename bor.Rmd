@@ -1,0 +1,76 @@
+---
+title: "NYC Black Owned Restaurants"
+author: "Sunder Sai"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(broom)
+library(janitor)
+library(openxlsx)
+library(DT)
+library(leaflet)
+```
+
+
+
+
+```{r, echo=FALSE, message= FALSE, warning=FALSE}
+bor <- read.xlsx("C:/Users/Sunder Sai/Desktop/Coding/R-programming/black_owned_restaurants/bor_nyc.xlsx", 
+                startRow = 4)
+
+# remove extra column
+bor <-  select(bor, -starts_with("x"))
+
+
+# separate column for lat and long
+bor <- separate(bor, 
+         Raw.Chunk,
+         into = c("lat", "long"),
+         sep = "!4d")
+
+# change from character to numeric 
+
+bor$lat <- as.numeric(bor$lat)
+bor$long <- as.numeric(bor$long)
+
+# reorder columns for datatable 
+col_names <- c("Restaurant", "Address", "Neighborhood", "Borough", "Service", 
+               "Phone", "Website", "lat", "long")
+bor <- bor[, col_names]
+
+
+
+# leaflet 
+library(leaflet)
+
+map <- leaflet(data=bor) %>%
+  addTiles() %>%
+  addMarkers(
+    lng = ~long,
+    lat = ~lat, 
+    popup = paste("<b> Restaurant:</b>", bor$Restaurant, "<br>",
+                  "<b> Address:</b>", bor$Address, "<br>",
+                  "<b> Neighborhood/Area:</b>", bor$Neighborhood, "<br>",
+                  "<b> Borough:</b>", bor$Borough, "<br>",
+                  "<b> Service:</b>", bor$Service, "<br>",
+                  "<b> Phone:</b>", bor$Phone, "<br>",
+                  "<a href='",
+                  bor$Website, 
+                  "' target='_blank'>",
+                  "Click Here for Website</a>")
+                  )
+
+
+map
+```
+
+
+```{r, echo=FALSE, message= FALSE, warning=FALSE}
+
+datatable(bor)
+```

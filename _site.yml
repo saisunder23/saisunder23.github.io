@@ -9,18 +9,21 @@ navbar:
     - text: "Data Science Projects"
       icon: fa-rocket
       menu:
-        - text: "COVID-19 Projects"
-          menu: 
-            - text: "COVID-19 Time-Series Analysis"
-              href: covid19_2.html
-            - text: "Testing Locations: Interactive Mapping"
-              href: covid_testing.html
-            - text: "Exploring COVID-19 Data"
-              href: covid19_1.html
-        - text: "Mapping Crime in San Francisco"
+        - text: "NYC Black Owned Restaurants: Flexdashboard"
+          href: bor_leaflet.html
+        - text: "Analyzing Crime in San Francisco"
           href: crime_sf.html
         - text: "Mapping SAT Scores"
           href: sat.html
+    - text: "COVID-19 Projects"
+      icon: fa-medkit
+      menu: 
+        - text: "COVID-19 Time-Series Analysis"
+          href: covid19_2.html
+        - text: "Testing Locations: Interactive Mapping"
+          href: covid_testing.html
+        - text: "Exploring COVID-19 Data"
+          href: covid19_1.html
     - text: "Resume"
       icon: fa-user
       href: about.html

@@ -370,25 +370,34 @@ div.tocify {
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
-    <li class="dropdown-submenu">
-      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">COVID-19 Projects</a>
-      <ul class="dropdown-menu" role="menu">
-        <li>
-          <a href="covid19_2.html">COVID-19 Time-Series Analysis</a>
-        </li>
-        <li>
-          <a href="covid_testing.html">Testing Locations: Interactive Mapping</a>
-        </li>
-        <li>
-          <a href="covid19_1.html">Exploring COVID-19 Data</a>
-        </li>
-      </ul>
+    <li>
+      <a href="bor_leaflet.html">NYC Black Owned Restaurants: Flexdashboard</a>
     </li>
     <li>
-      <a href="crime_sf.html">Mapping Crime in San Francisco</a>
+      <a href="crime_sf.html">Analyzing Crime in San Francisco</a>
     </li>
     <li>
       <a href="sat.html">Mapping SAT Scores</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-medkit"></span>
+     
+    COVID-19 Projects
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="covid19_2.html">COVID-19 Time-Series Analysis</a>
+    </li>
+    <li>
+      <a href="covid_testing.html">Testing Locations: Interactive Mapping</a>
+    </li>
+    <li>
+      <a href="covid19_1.html">Exploring COVID-19 Data</a>
     </li>
   </ul>
 </li>
@@ -498,8 +507,8 @@ daily_calls &lt;- calls %&gt;%
 <pre class="r"><code>#inner join
 shared_dates&lt;-inner_join(daily_calls, daily_incidents, by=&quot;Date&quot;)
 glimpse(shared_dates)</code></pre>
-<pre><code>## Observations: 776
-## Variables: 3
+<pre><code>## Rows: 776
+## Columns: 3
 ## $ Date        &lt;dttm&gt; 2016-09-21, 2017-09-14, 2017-06-01, 2016-06-24, 2016-0...
 ## $ n_calls     &lt;int&gt; 165, 165, 162, 161, 160, 160, 159, 158, 158, 157, 156, ...
 ## $ n_incidents &lt;int&gt; 60, 97, 100, 105, 100, 89, 109, 97, 93, 72, 73, 68, 80,...</code></pre>
