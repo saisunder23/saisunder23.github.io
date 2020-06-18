@@ -10,7 +10,7 @@ navbar:
       icon: fa-rocket
       menu:
         - text: "NYC Black Owned Restaurants: Flexdashboard"
-          href: bor_leaflet.html
+          href: supportblackownedrestaurants.html
         - text: "Analyzing Crime in San Francisco"
           href: crime_sf.html
         - text: "Mapping SAT Scores"

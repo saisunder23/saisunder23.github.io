@@ -1,0 +1,192 @@
+---
+title: "NYC Black Owned Restaurants"
+author: "Sunder Sai"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    theme: paper
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(broom)
+library(janitor)
+library(openxlsx)
+library(DT)
+library(leaflet)
+library(flexdashboard)
+library(shiny)
+library(crosstalk)
+
+
+
+bor <- read.xlsx("C:/Users/Sunder Sai/Desktop/Coding/R-programming/black_owned_restaurants/bor_nyc.xlsx", 
+                startRow = 4)
+
+# remove extra column
+bor <-  select(bor, -starts_with("x"))
+
+
+# separate column for lat and long
+bor <- separate(bor, 
+         Raw.Chunk,
+         into = c("lat", "long"),
+         sep = "!4d")
+
+# change from character to numeric 
+
+bor$lat <- as.numeric(bor$lat)
+bor$long <- as.numeric(bor$long)
+
+# reorder columns for datatable 
+col_names <- c("Restaurant", "Address", "Neighborhood", "Borough", "Service", 
+               "Phone", "Website", "lat", "long")
+bor <- bor[, col_names]
+
+# modifying/standardizing text for "Service" variable 
+
+bor$Service <- str_to_lower(bor$Service)
+bor$Service <- gsub("&|and", "+", bor$Service)
+bor$Service <- str_trim(bor$Service)
+bor$Service <- gsub("pick up", "pickup", bor$Service)
+bor$Service <- gsub("shipping", "delivery", bor$Service)
+bor$Service <- gsub(",", " +", bor$Service)
+
+bor$Service <- if_else(str_detect(bor$Service, "weekend"), "pickup on weekends", bor$Service)
+bor$Service <- if_else(str_detect(bor$Service, "online|takeout|to go|/"), "pickup", bor$Service)
+
+# "pre-order + delivery" as well as "pre-ordered pans" to "delivery" 
+bor$Service <- if_else(str_detect(bor$Service, "pre-order |pre-ordered"), "delivery", bor$Service)
+bor$Service <- gsub("only", "", bor$Service)
+
+bor$Service <- if_else(str_detect(bor$Service, "meals|nationwide|veg"), "pickup + delivery", bor$Service)
+bor$Service <- str_trim(bor$Service)
+bor$Service[bor$Service == "pickup + delivery + + delivery"] <- "pickup + delivery"
+bor$Service[bor$Service == "pickup+ delivery"] <- "pickup + delivery"
+bor$Service[bor$Service == "pickup"] <- "pickup only"
+bor$Service[bor$Service == "delivery"] <- "delivery only"
+bor$Service[bor$Service == "catering  for now"] <- "catering only"
+bor$Service <- str_trim(bor$Service)
+
+bor$Service <- factor(bor$Service, 
+                      levels = c("pickup only",
+                                 "delivery only",
+                                 "catering only",
+                                 "pickup + delivery",
+                                 "pickup + 3rd party delivery",
+                                 "pickup + delivery + catering",
+                                 "pickup on weekends",
+                                 "closed"))
+
+# shared data for crosstalk
+sd_bor <- SharedData$new(bor)
+
+```
+
+
+
+Column {data-width=600}
+---------------------------------------------------------
+
+### Interactive Map
+
+``` {r map, echo=FALSE, message= FALSE, warning=FALSE}
+
+sd_bor %>%
+  leaflet::leaflet() %>%
+  leaflet::addProviderTiles(providers$OpenStreetMap) %>%
+  # leaflet::setView(-74.00, 40.71, zoom = 10) %>%
+  leaflet::fitBounds(-74.353249,40.493287,-73.596566,40.91388) %>%
+  leaflet::addMarkers(
+    lng = ~long,
+    lat = ~lat, 
+    popup = paste("<b> Restaurant:</b>", bor$Restaurant, "<br>",
+                  "<b> Address:</b>", bor$Address, "<br>",
+                  "<b> Neighborhood/Area:</b>", bor$Neighborhood, "<br>",
+                  "<b> Borough:</b>", bor$Borough, "<br>",
+                  "<b> Service:</b>", bor$Service, "<br>",
+                  "<b> Phone:</b>", bor$Phone, "<br>",
+                  "<a href='",
+                  bor$Website, 
+                  "' target='_blank'>",
+                  "Click Here for Website</a>")
+                  ) %>%
+  leaflet::addMeasure()
+
+```
+
+
+
+
+
+Column {data-width=400}
+------------------------------------------------------
+
+
+### Filters 
+
+```{r filters, echo=FALSE, message= FALSE, warning=FALSE}
+
+bscols(
+  filter_checkbox(
+    id = "Borough",
+    label= "Borough",
+    sharedData= sd_bor,
+    group= ~Borough
+    ),
+  filter_checkbox(
+    id = "Service",
+    label = "Service", 
+    sharedData = sd_bor,
+    group= ~Service
+  )
+)
+
+
+```
+
+
+### Datatable 
+
+```{r datatable, echo=FALSE, message= FALSE, warning=FALSE}
+
+sd_bor %>%
+  DT::datatable(
+    filter = "top", # allows filtering on each columns
+    extensions = c(
+      "Buttons", # add download buttons
+      "Scroller" # for scrolling instead
+    ),
+    rownames=FALSE, # remove rownames
+    style = "bootstrap",
+    class = "compact",
+    width = "100%",
+    options = list(
+      dom = "Blrtip", 
+      deferRender = TRUE, 
+      scrollY = 300,
+      scroller = TRUE,
+      columnDefs = list(
+        list(
+          visible = FALSE, 
+          targets = c(2:8)
+        )
+      ),
+    buttons = list(
+      I("colvis"), # turn columns on and off
+      "csv", # download as .csv
+      "excel" # download as .xlsx
+      )
+    ),
+    colnames = c(
+      "Latitude"="lat",
+      "Longitude"="long"
+    )
+  )
+```
+
