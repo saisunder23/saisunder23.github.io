@@ -48,6 +48,42 @@ col_names <- c("Restaurant", "Address", "Neighborhood", "Borough", "Service",
                "Phone", "Website", "lat", "long")
 bor <- bor[, col_names]
 
+# modifying/standardizing text for "Service" variable 
+
+bor$Service <- str_to_lower(bor$Service)
+bor$Service <- gsub("&|and", "+", bor$Service)
+bor$Service <- str_trim(bor$Service)
+bor$Service <- gsub("pick up", "pickup", bor$Service)
+bor$Service <- gsub("shipping", "delivery", bor$Service)
+bor$Service <- gsub(",", " +", bor$Service)
+
+bor$Service <- if_else(str_detect(bor$Service, "weekend"), "pickup on weekends", bor$Service)
+bor$Service <- if_else(str_detect(bor$Service, "online|takeout|to go|/"), "pickup", bor$Service)
+
+# "pre-order + delivery" as well as "pre-ordered pans" to "delivery" 
+bor$Service <- if_else(str_detect(bor$Service, "pre-order |pre-ordered"), "delivery", bor$Service)
+bor$Service <- gsub("only", "", bor$Service)
+
+bor$Service <- if_else(str_detect(bor$Service, "meals|nationwide|veg"), "pickup + delivery", bor$Service)
+bor$Service <- str_trim(bor$Service)
+bor$Service[bor$Service == "pickup + delivery + + delivery"] <- "pickup + delivery"
+bor$Service[bor$Service == "pickup+ delivery"] <- "pickup + delivery"
+bor$Service[bor$Service == "pickup"] <- "pickup only"
+bor$Service[bor$Service == "delivery"] <- "delivery only"
+bor$Service[bor$Service == "catering  for now"] <- "catering only"
+bor$Service <- str_trim(bor$Service)
+
+bor$Service <- factor(bor$Service, 
+                      levels = c("pickup only",
+                                 "delivery only",
+                                 "catering only",
+                                 "pickup + delivery",
+                                 "pickup + 3rd party delivery",
+                                 "pickup + delivery + catering",
+                                 "pickup on weekends",
+                                 "closed"))
+
+# shared data for crosstalk
 sd_bor <- SharedData$new(bor)
 
 ```
@@ -102,8 +138,15 @@ bscols(
     label= "Borough",
     sharedData= sd_bor,
     group= ~Borough
-    )
+    ),
+  filter_checkbox(
+    id = "Service",
+    label = "Service", 
+    sharedData = sd_bor,
+    group= ~Service
   )
+)
+
 
 ```
 
@@ -131,13 +174,18 @@ sd_bor %>%
       columnDefs = list(
         list(
           visible = FALSE, 
-          targets = c(7,8)
+          targets = c(2:8)
         )
       ),
     buttons = list(
+      I("colvis"), # turn columns on and off
       "csv", # download as .csv
       "excel" # download as .xlsx
       )
+    ),
+    colnames = c(
+      "Latitude"="lat",
+      "Longitude"="long"
     )
   )
 ```
